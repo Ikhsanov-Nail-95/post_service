@@ -22,4 +22,7 @@
   postgres
 * В коде продемонстрирована работа как с JPA (Hibernate)
 
-  
+## Post Service - публикация постов с возможностью писать под ними комментарии и ставить лайки
+[Контроллер](https://github.com/Ikhsanov-Nail-95/post_service/blob/main/src/main/java/faang/school/postservice/controller/PostController.java) - документировал API с помощью библиотеки Swagger/OpenAPI. Каждая операция (создание поста, публикация поста и обновление поста) документирована с указанием её назначения, возможных ответов и валидации параметров. 
+
+[Сервис](https://github.com/Ikhsanov-Nail-95/post_service/blob/main/src/main/java/faang/school/postservice/service/PostService.java) - выполняет все действия описанные в контроллере. Чистый и понятный код с соблюдением принципов SOLID и других передовых практик.
