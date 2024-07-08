@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class LikeDto {
+
     private Long id;
     @NotNull
     @Positive
@@ -20,4 +21,5 @@ public class LikeDto {
     private Long postId;
     @Positive
     private Long commentId;
+
 }

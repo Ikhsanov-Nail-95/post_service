@@ -3,13 +3,13 @@ package faang.school.postservice.service;
 import faang.school.postservice.client.UserServiceClient;
 import faang.school.postservice.config.context.UserContext;
 import faang.school.postservice.dto.like.LikeDto;
-import faang.school.postservice.dto.like.LikeEvent;
+import faang.school.postservice.dto.like.LikeEventDto;
 import faang.school.postservice.dto.UserDto;
 import faang.school.postservice.mapper.LikeMapper;
 import faang.school.postservice.model.Comment;
 import faang.school.postservice.model.Like;
 import faang.school.postservice.model.Post;
-import faang.school.postservice.publishers.LikeEventPublisher;
+import faang.school.postservice.publisher.redis.RedisLikeEventPublisher;
 import faang.school.postservice.repository.LikeRepository;
 import faang.school.postservice.validator.LikeValidation;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ public class LikeServiceTest {
     @Mock
     private UserContext userContext;
     @Mock
-    private LikeEventPublisher likeEventPublisher;
+    private RedisLikeEventPublisher redisLikeEventPublisher;
     @Spy
     private LikeMapper likeMapper;
 
@@ -96,7 +96,7 @@ public class LikeServiceTest {
 
         assertEquals(likeDto, likeService.likePost(likeDto));
 
-        verify(likeEventPublisher, times(1)).publish(any(LikeEvent.class));
+        verify(redisLikeEventPublisher, times(1)).publish(any(LikeEventDto.class));
         verify(likeValidation, times(1)).verifyUniquenessLikePost(likeDto.getPostId(), likeDto.getUserId());
     }
 
@@ -121,7 +121,7 @@ public class LikeServiceTest {
 
         assertEquals(likeDto, likeService.likeComment(likeDto));
 
-        verify(likeEventPublisher, times(1)).publish(any(LikeEvent.class));
+        verify(redisLikeEventPublisher, times(1)).publish(any(LikeEventDto.class));
         verify(likeValidation, times(1)).verifyUniquenessLikeComment(likeDto.getCommentId(), likeDto.getUserId());
     }
 

@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class LikeEvent {
+public class LikeEventDto {
+
     @Positive
     private Long id;
     @NotNull
@@ -29,4 +30,5 @@ public class LikeEvent {
     private Long commentId;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
+
 }

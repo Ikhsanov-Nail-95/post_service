@@ -5,7 +5,7 @@ import faang.school.postservice.dto.comment.CommentEventDto;
 import faang.school.postservice.mapper.CommentMapper;
 import faang.school.postservice.model.Comment;
 import faang.school.postservice.model.Post;
-import faang.school.postservice.publisher.CommentEventPublisher;
+import faang.school.postservice.publisher.redis.RedisCommentEventPublisher;
 import faang.school.postservice.repository.CommentRepository;
 import faang.school.postservice.validator.CommentValidation;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,7 +24,7 @@ public class CommentService {
     private final CommentMapper commentMapper;
     private final PostService postService;
     private final CommentValidation commentValidation;
-    private final CommentEventPublisher commentEventPublisher;
+    private final RedisCommentEventPublisher redisCommentEventPublisher;
 
     public CommentDto create(CommentDto commentDto, long userId) {
         commentValidation.authorExistenceValidation(userId);
@@ -38,7 +38,7 @@ public class CommentService {
                 .commentedAt(newComment.getCreatedAt())
                 .postId(newComment.getPost().getId())
                 .build();
-        commentEventPublisher.publish(event);
+        redisCommentEventPublisher.publish(event);
         return commentMapper.toDto(newComment);
     }
 
