@@ -3,13 +3,13 @@ package faang.school.postservice.service;
 import faang.school.postservice.client.UserServiceClient;
 import faang.school.postservice.config.context.UserContext;
 import faang.school.postservice.dto.like.LikeDto;
-import faang.school.postservice.dto.like.LikeEvent;
+import faang.school.postservice.dto.like.LikeEventDto;
 import faang.school.postservice.dto.UserDto;
 import faang.school.postservice.mapper.LikeMapper;
 import faang.school.postservice.model.Comment;
 import faang.school.postservice.model.Like;
 import faang.school.postservice.model.Post;
-import faang.school.postservice.publishers.LikeEventPublisher;
+import faang.school.postservice.publisher.redis.RedisLikeEventPublisher;
 import faang.school.postservice.repository.LikeRepository;
 import faang.school.postservice.validator.LikeValidation;
 import feign.FeignException;
@@ -30,7 +30,7 @@ public class LikeService {
     private final LikeMapper likeMapper;
     private final UserServiceClient userServiceClient;
     private final UserContext userContext;
-    private final LikeEventPublisher likeEventPublisher;
+    private final RedisLikeEventPublisher redisLikeEventPublisher;
 
     public LikeDto likePost(LikeDto likeDto) {
         Post checkPost = postService.existsPost(likeDto.getPostId());
@@ -41,13 +41,13 @@ public class LikeService {
                 .post(checkPost)
                 .build();
 
-        LikeEvent likeEvent = buildLikeEvent(likeDto);
-        LikeEvent likeEventPost = likeEvent.toBuilder()
+        LikeEventDto likeEventDto = buildLikeEvent(likeDto);
+        LikeEventDto likeEventDtoPost = likeEventDto.toBuilder()
                 .authorPostId(checkPost.getAuthorId())
                 .postId(checkPost.getId())
                 .build();
 
-        likeEventPublisher.publish(likeEventPost);
+        redisLikeEventPublisher.publish(likeEventDtoPost);
 
         return likeMapper.toDto(likeRepository.save(like));
     }
@@ -66,13 +66,13 @@ public class LikeService {
                 .comment(checkComment)
                 .build();
 
-        LikeEvent likeEvent = buildLikeEvent(likeDto);
-        LikeEvent likeEventComment = likeEvent.toBuilder()
+        LikeEventDto likeEventDto = buildLikeEvent(likeDto);
+        LikeEventDto likeEventDtoComment = likeEventDto.toBuilder()
                 .authorCommentId(checkComment.getAuthorId())
                 .commentId(checkComment.getId())
                 .build();
 
-        likeEventPublisher.publish(likeEventComment);
+        redisLikeEventPublisher.publish(likeEventDtoComment);
 
         return likeMapper.toDto(likeRepository.save(like));
     }
@@ -90,8 +90,8 @@ public class LikeService {
         }
     }
 
-    public LikeEvent buildLikeEvent(LikeDto likeDto) {
-        return LikeEvent.builder()
+    public LikeEventDto buildLikeEvent(LikeDto likeDto) {
+        return LikeEventDto.builder()
                 .authorLikeId(likeDto.getUserId())
                 .createdAt(LocalDateTime.now())
                 .build();

@@ -1,6 +1,5 @@
 package faang.school.postservice.dto.comment;
 
-
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -15,6 +14,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 public class CommentDto {
+
     private Long id;
     @NotNull
     private Long authorId;
@@ -23,4 +23,5 @@ public class CommentDto {
     private List<Long> likesIds;
     @NotNull
     private Long postId;
+
 }

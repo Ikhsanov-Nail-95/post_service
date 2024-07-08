@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Builder
 @Data
 public class CommentEventDto {
+
     @NotNull
     private Long postId;
     @NotNull
@@ -17,4 +18,5 @@ public class CommentEventDto {
     private Long commentId;
     @NotNull
     private LocalDateTime commentedAt;
+
 }

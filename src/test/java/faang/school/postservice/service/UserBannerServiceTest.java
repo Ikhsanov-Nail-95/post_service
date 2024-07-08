@@ -1,7 +1,7 @@
 package faang.school.postservice.service;
 
 import faang.school.postservice.model.Post;
-import faang.school.postservice.publishers.UserBannerPublisher;
+import faang.school.postservice.publisher.redis.RedisUserBannerPublisher;
 import faang.school.postservice.repository.PostRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ class UserBannerServiceTest {
     @Mock
     PostRepository postRepository;
     @Mock
-    UserBannerPublisher userBannerPublisher;
+    RedisUserBannerPublisher redisUserBannerPublisher;
     @InjectMocks
     UserBannerService userBannerService;
     Post firstPost;
@@ -77,7 +77,7 @@ class UserBannerServiceTest {
 
         userBannerService.banPosts();
 
-        verify(userBannerPublisher, times(1)).publish(userIdsToBan);
+        verify(redisUserBannerPublisher, times(1)).publish(userIdsToBan);
         verify(postRepository, times(1)).deleteAllByAuthorIdIn(userIdsToBan);
     }
 }
