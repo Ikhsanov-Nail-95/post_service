@@ -51,4 +51,5 @@ public class Album {
     public void removePost(long postId) {
         posts.removeIf(post -> post.getId() == postId);
     }
+
 }

@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CommentEvent {
+public class CommentEventDto {
+
     @NotNull
     private Long postId;
     @NotNull
@@ -19,4 +20,5 @@ public class CommentEvent {
     private Long commentId;
     @NotNull
     private LocalDateTime commentedAt;
+
 }

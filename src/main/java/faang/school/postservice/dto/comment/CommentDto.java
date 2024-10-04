@@ -12,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class CommentDto {
+
     private Long id;
     @NotNull
     private Long authorId;
@@ -20,4 +21,5 @@ public class CommentDto {
     private List<Long> likesIds;
     @NotNull
     private Long postId;
+
 }

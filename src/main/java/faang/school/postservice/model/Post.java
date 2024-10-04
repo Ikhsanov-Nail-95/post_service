@@ -72,4 +72,5 @@ public class Post {
 
     @Column(name = "verified", nullable = false)
     private Boolean verified;
+
 }
