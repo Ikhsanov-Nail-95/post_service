@@ -3,11 +3,15 @@ package faang.school.postservice.model.ad;
 import faang.school.postservice.model.Post;
 import jakarta.persistence.*;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 @Builder
 @Entity
 @Table(name = "post_ad")
