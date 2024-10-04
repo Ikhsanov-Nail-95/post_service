@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class UserBannerService {
-
     private final PostRepository postRepository;
     private final RedisUserBannerPublisher redisUserBannerPublisher;
     @Value("${limits.unverified_post_limit}")

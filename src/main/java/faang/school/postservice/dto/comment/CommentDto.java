@@ -2,17 +2,15 @@ package faang.school.postservice.dto.comment;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
-@NoArgsConstructor
-@Data
-@Builder
+@Setter
+@Getter
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class CommentDto {
 
     private Long id;

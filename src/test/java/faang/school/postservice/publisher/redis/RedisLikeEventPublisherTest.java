@@ -1,9 +1,8 @@
-package faang.school.postservice.redis;
+package faang.school.postservice.publisher.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import faang.school.postservice.dto.like.LikeEventDto;
-import faang.school.postservice.publisher.redis.RedisLikeEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

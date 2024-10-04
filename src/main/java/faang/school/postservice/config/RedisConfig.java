@@ -26,7 +26,6 @@ public class RedisConfig {
     @Value("${spring.data.redis.channels.notification_comment_channel}")
     private String commentTopic;
 
-
     @Bean
     public JedisConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);

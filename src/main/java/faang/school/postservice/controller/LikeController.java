@@ -44,4 +44,5 @@ public class LikeController {
     public void deleteLikeFromComment(@Valid @PathVariable Long commentId) {
         likeService.deleteLikeFromComment(commentId);
     }
+
 }
