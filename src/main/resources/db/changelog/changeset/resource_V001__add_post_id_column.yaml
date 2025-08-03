@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: resource-add-post-id-column
+      author: Nail
+      context: ddl
+      comment: "Adding post_id column to link resources with posts"
+      changes:
+        - addColumn:
+            tableName: resource
+            columns:
+              - column:
+                  name: post_id
+                  type: bigint
+                  constraints:
+                    nullable: false # возможно и не нужно будет, надо подумать
+
+  - changeSet:
+      id: add-fk-post-id-to-resource
+      author: Nail
+      context: ddl
+      comment: "Adding foreign key constraint to enforce relationship with post table"
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: resource
+            baseColumnNames: post_id
+            constraintName: fk_post_id
+            referencedTableName: post
+            referencedColumnNames: id

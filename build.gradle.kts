@@ -22,9 +22,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.1.0")
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.0.2")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-    implementation("org.springframework.retry:spring-retry:2.0.6")
+    implementation("org.springframework.retry:spring-retry:2.0.12")
 
     /**
      * Message Broker Kafka
@@ -41,6 +42,7 @@ dependencies {
     /**
      * Utils & Logging
      */
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
     implementation("org.slf4j:slf4j-api:2.0.5")
     implementation("ch.qos.logback:logback-classic:1.4.6")

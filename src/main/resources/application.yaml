@@ -1,4 +1,12 @@
 spring:
+  mvc:
+    servlet:
+      path: /api/v1
+
+  output:
+    ansi:
+      enabled: ALWAYS
+
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/postgres
@@ -21,18 +29,22 @@ spring:
     redis:
       port: 6379
       host: localhost
+      # Каналы для Pub/Sub механизма Redis
       channels:
-        user_ban_channel: user_ban_channel
-        notification_like_channel: notification_like_channel
-        notification_comment_channel: notification_comment_channel
+        user-banner-event: "app:user:banner"
+        post-liked-event: "app:post:liked"
+        post-commented-event: "app:post:commented"
 
     kafka:
       bootstrap-servers: localhost:9092
-      groupId: post_service #TODO: Пока непонятно нужен он или нетэ
+      groupId: post_service #TODO: Пока непонятно нужен он или нет
+
       producer:
-        acks: all #TODO: Подтверждение и повторная попытка
-        retries: 10 #TODO: Производители Kafka должны указать уровень подтверждения, известный как acks
-        retry.backoff.ms: 1000 #TODO: надо разобраться надо или нет
+        acks: all #TODO: Подтверждение и повторная попытка  # Гарантия получения
+        retries: 10 #TODO: Производители Kafka должны указать уровень подтверждения, известный как acks # Кол-во повторов при ошибке
+        retry.backoff.ms: 1000 #TODO: надо разобраться надо или нет  # Интервал между попытками
+
+      # Темы Kafka с количеством партиций и фактором репликации
       topics:
         topic_post: post_topic
         partitions_post: 10
@@ -54,25 +66,14 @@ spring:
         partitions_feed_heat: 5 #TODO: Пока непонятно сколько вообще нужно ставить, надо в конце последней таски смотреть
         replication_feed_heat: 3
 
-  mvc:
-    servlet:
-      path: /api/v1
-
 server:
   port: 8081
 
-logging:
+logging: #TODO: Непонятно зачем нужно
   level:
     root: info
 
-post:
-  publisher:
-    scheduler:
-      cron: "0 0/1 * 1/1 * ?" # every minute #TODO: не используется, но может потом пригодится
-  ad-remover:
-    scheduler:
-      cron: "0 0/1 * 1/1 * ?" # every minute #TODO: не используется, если нет, то удалить
-
+# Конфиги сервисов (FeignClient)
 user-service:
   host: localhost
   port: 8080
@@ -83,8 +84,15 @@ payment-service:
   host: localhost
   port: 9080
 
+# Плановые задачи
 scheduled:
   author-banner: "@daily"
 
+# Лимиты валидации
 limits:
   unverified_post_limit: 5
+
+# Лимит на размер батча при обращении к user_service
+like:
+  user-fetch:
+    batch-size: 100

@@ -1,45 +1,56 @@
 package faang.school.postservice.controller;
 
 import faang.school.postservice.config.context.UserContext;
-import faang.school.postservice.dto.comment.CommentDto;
+import faang.school.postservice.dto.request.CommentCreateRequest;
+import faang.school.postservice.dto.request.CommentUpdateRequest;
+import faang.school.postservice.dto.response.CommentResponse;
 import faang.school.postservice.service.CommentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.naming.AuthenticationException;
-import java.util.List;
-
-@RestController
+@Tag(name = "Comment Controller", description = "Endpoints for managing comments: create, update, delete, and get comments by post ID")
+@Validated
 @RequiredArgsConstructor
-@RequestMapping
+@RestController
+@RequestMapping("/comments")
 public class CommentController {
+
     private final CommentService commentService;
     private final UserContext userContext;
 
     @PostMapping
-    public CommentDto create(@Valid @RequestBody CommentDto comment) {
-        return commentService.create(comment, userContext.getUserId());
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentResponse createComment(@RequestBody @Valid CommentCreateRequest commentCreateRequest) {
+        long userId = userContext.getUserId();
+        return commentService.createComment(userId, commentCreateRequest);
     }
 
-    @PutMapping
-    public CommentDto update(@Valid @RequestBody CommentDto comment) throws AuthenticationException {
-        Long userId = userContext.getUserId();
-        if (userId != comment.getAuthorId()) {
-            throw new AuthenticationException("Only authors of the comment can update it");
-        }
-        return commentService.update(comment, userId);
+    @PutMapping("/{id}")
+    public CommentResponse updateComment(
+            @PathVariable("id") @Positive(message = "Comment ID must be positive") long id,
+            @RequestBody @Valid CommentUpdateRequest commentUpdateRequest
+    ) {
+        return commentService.updateComment(id, commentUpdateRequest);
     }
 
-    @GetMapping("/{postId}/comments")
-    public List<CommentDto> getPostComments(@PathVariable @NotNull long postId) {
-        return commentService.getPostComments(postId);
+    @DeleteMapping("/{id}")
+    public void deleteComment(@PathVariable("id") @Positive(message = "Comment ID must be positive") long id) {
+        commentService.deleteComment(id);
     }
 
-    @DeleteMapping
-    public void delete(@Valid @RequestBody CommentDto comment) {
-        commentService.delete(comment, userContext.getUserId());
+    @GetMapping("/by-post/{postId}")
+    public Page<CommentResponse> getCommentsByPostId(
+            @PathVariable("postId") @Positive(message = "Post ID must be positive") long postId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return commentService.getCommentsByPostId(postId, page, size);
     }
 
 }

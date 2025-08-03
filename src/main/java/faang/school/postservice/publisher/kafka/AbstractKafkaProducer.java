@@ -26,7 +26,7 @@ public abstract class AbstractKafkaProducer<T> {
             message = objectMapper.writeValueAsString(eventType);
         } catch (JsonProcessingException e) {
             log.error("Error when serializing an object to a string JSON", e);
-            throw new JsonSerializationException("Failed to serialize event: " + eventType, e);
+            throw new JsonSerializationException("Failed to serialize event: " + eventType);
         }
         kafkaTemplate.send(topicName, message);
     }

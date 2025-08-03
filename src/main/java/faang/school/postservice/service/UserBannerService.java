@@ -1,7 +1,7 @@
 package faang.school.postservice.service;
 
 import faang.school.postservice.model.Post;
-import faang.school.postservice.publisher.redis.RedisUserBannerPublisher;
+import faang.school.postservice.publisher.redis.UserBannerEventPublisher;
 import faang.school.postservice.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +17,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class UserBannerService {
+
     private final PostRepository postRepository;
-    private final RedisUserBannerPublisher redisUserBannerPublisher;
+    private final UserBannerEventPublisher userBannerEventPublisher;
+
     @Value("${limits.unverified_post_limit}")
     private int unverifiedPostLimit;
 
@@ -33,7 +35,7 @@ public class UserBannerService {
                 .toList();
 
         if (!userIdsToBan.isEmpty()) {
-            redisUserBannerPublisher.publish(userIdsToBan);
+            userBannerEventPublisher.publish(userIdsToBan);
             postRepository.deleteAllByAuthorIdIn(userIdsToBan);
             log.info("Event Published!");
         }

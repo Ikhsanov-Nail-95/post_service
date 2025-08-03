@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: post-add-title-column
+      author: Nail
+      context: ddl
+      comment: "Adding a text field 'title' to the post table"
+      changes:
+        - addColumn:
+            tableName: post
+            columns:
+              - column:
+                  name: title
+                  type: varchar(255)
+                  defaultValue: "Default title"
+                  constraints:
+                    nullable: false
+
+      rollback:
+        - dropColumn:
+            tableName: post
+            columnName: title
