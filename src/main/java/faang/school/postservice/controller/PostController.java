@@ -1,5 +1,6 @@
 package faang.school.postservice.controller;
 
+import faang.school.postservice.config.context.UserContext;
 import faang.school.postservice.dto.request.PostCreateRequest;
 import faang.school.postservice.dto.response.PostResponse;
 import faang.school.postservice.dto.request.PostUpdateRequest;
@@ -29,6 +30,7 @@ import java.util.List;
 public class PostController {
 
     private final PostService postService;
+    private final UserContext userContext;
 
     @Operation(
             summary = "Creating a draft post",
@@ -53,9 +55,9 @@ public class PostController {
             @ApiResponse(responseCode = "404", description = "Post not found"),
             @ApiResponse(responseCode = "409", description = "Already published")
     })
-    @PatchMapping("/{id}/publish")
-    public PostResponse publishPost(@PathVariable("id") @Positive(message = "Post ID must be positive") long id) {
-        return postService.publishPost(id);
+    @PatchMapping("/{postId}/publish")
+    public PostResponse publishPost(@PathVariable("postId") @Positive(message = "Post ID must be positive") long postId) {
+        return postService.publishPost(postId);
     }
 
     @Operation(
@@ -68,12 +70,12 @@ public class PostController {
             @ApiResponse(responseCode = "403", description = "Forbidden to modify author"),
             @ApiResponse(responseCode = "404", description = "Post not found")
     })
-    @PutMapping("/{id}")
+    @PutMapping("/{postId}")
     public PostResponse updatePost(
-            @PathVariable("id") @Positive(message = "Post ID must be positive") long id,
+            @PathVariable("postId") @Positive(message = "Post ID must be positive") long postId,
             @RequestBody @Valid PostUpdateRequest postUpdateRequest
     ) {
-        return postService.updatePost(id, postUpdateRequest);
+        return postService.updatePost(postId, postUpdateRequest);
     }
 
     @Operation(
@@ -85,9 +87,9 @@ public class PostController {
             @ApiResponse(responseCode = "404", description = "Post not found"),
             @ApiResponse(responseCode = "409", description = "Post already deleted")
     })
-    @DeleteMapping("/{id}")
-    public PostResponse deletePost(@PathVariable("id") @Positive(message = "Post ID must be positive") long id) {
-        return postService.deletePost(id);
+    @DeleteMapping("/{postId}")
+    public PostResponse deletePost(@PathVariable("postId") @Positive(message = "Post ID must be positive") long postId) {
+        return postService.deletePost(postId);
     }
 
     @Operation(summary = "Get a post by ID")
@@ -95,9 +97,10 @@ public class PostController {
             @ApiResponse(responseCode = "200", description = "Post received"),
             @ApiResponse(responseCode = "404", description = "Post not found")
     })
-    @GetMapping("/{id}")
-    public PostResponse getPostById(@PathVariable("id") @Positive(message = "Post ID must be positive") long id) {
-        return postService.getPostById(id);
+    @GetMapping("/{postId}")
+    public PostResponse getPostById(@PathVariable("postId") @Positive(message = "Post ID must be positive") long postId) {
+        long userId = userContext.getUserId();
+        return postService.getPostById(postId, userId);
     }
 
     @Operation(summary = "Get posts by title part (case-insensitive)")
@@ -106,8 +109,10 @@ public class PostController {
     })
     @GetMapping("/search")
     public List<PostResponse> getPostByTitle(
-            @RequestParam("titlePart") @NotEmpty(message = "Post title must not be empty") String titlePart) {
-        return postService.getPostByTitle(titlePart);
+            @RequestParam("titlePart")
+            @NotEmpty(message = "Post title must not be empty") String titlePart) {
+        long userId = userContext.getUserId();
+        return postService.getPostByTitle(titlePart, userId);
     }
 
     @Operation(
@@ -124,7 +129,8 @@ public class PostController {
             @PathVariable("authorId")
             @Positive(message = "User ID must be positive") long authorId
     ) {
-        return postService.getDraftsByAuthorId(authorId);
+        long userId = userContext.getUserId();
+        return postService.getDraftsByAuthorId(authorId, userId);
     }
 
     @Operation(
@@ -140,7 +146,8 @@ public class PostController {
             @PathVariable("projectId")
             @Positive(message = "Project ID must be positive") long projectId
     ) {
-        return postService.getDraftsByProjectId(projectId);
+        long userId = userContext.getUserId();
+        return postService.getDraftsByProjectId(projectId, userId);
     }
 
     @Operation(
@@ -157,7 +164,8 @@ public class PostController {
             @PathVariable("authorId")
             @Positive(message = "User ID must be positive") long authorId
     ) {
-        return postService.getPostsByAuthorId(authorId);
+        long userId = userContext.getUserId();
+        return postService.getPostsByAuthorId(authorId, userId);
     }
 
     @Operation(
@@ -174,7 +182,8 @@ public class PostController {
             @PathVariable("projectId")
             @Positive(message = "Project ID must be positive") long projectId
     ) {
-        return postService.getPostsByProjectId(projectId);
+        long userId = userContext.getUserId();
+        return postService.getPostsByProjectId(projectId, userId);
     }
 
 }

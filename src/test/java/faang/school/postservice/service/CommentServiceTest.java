@@ -8,7 +8,6 @@ import faang.school.postservice.exception.DataValidationException;
 import faang.school.postservice.mapper.CommentMapperImpl;
 import faang.school.postservice.model.Comment;
 import faang.school.postservice.model.Post;
-import faang.school.postservice.publisher.redis.CommentEventPublisher;
 import faang.school.postservice.repository.CommentRepository;
 import faang.school.postservice.validator.CommentValidation;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -40,20 +40,17 @@ class CommentServiceTest {
     private final long commentId = 100L;
     private final int page = 0;
     private final int size = 10;
-    @Mock
-    private AuthorValidationService authorValidationService;
-    @Mock
-    private PostService postService;
-    @Mock
-    private CommentValidation commentValidation;
-    @Mock
-    private CommentRepository commentRepository;
-    @Mock
-    private CommentEventPublisher commentEventPublisher;
-    @Spy
-    private CommentMapperImpl commentMapper = new CommentMapperImpl();
-    @InjectMocks
-    private CommentService commentService;
+
+    @Mock private PostService postService;
+    @Mock private AuthorValidationService authorValidationService;
+    @Mock private CommentValidation commentValidation;
+    @Mock private CommentRepository commentRepository;
+    @Mock private ApplicationEventPublisher eventPublisher;
+
+    @Spy private CommentMapperImpl commentMapper = new CommentMapperImpl();
+
+    @InjectMocks private CommentService commentService;
+
     private Post post;
     private Comment savedComment;
     private CommentCreateRequest createRequest;
@@ -61,8 +58,11 @@ class CommentServiceTest {
 
     @BeforeEach
     void setUp() {
+        long postAuthorId = 15L;
+
         post = Post.builder()
                 .id(postId)
+                .authorId(postAuthorId)
                 .build();
 
         savedComment = Comment.builder()
@@ -70,7 +70,7 @@ class CommentServiceTest {
                 .content("Test comment")
                 .authorId(userId)
                 .post(post)
-                .createdAt(ZonedDateTime.now())
+                .createdAt(ZonedDateTime.now().minusDays(2))
                 .build();
 
         createRequest = CommentCreateRequest.builder()
@@ -100,7 +100,7 @@ class CommentServiceTest {
         verify(authorValidationService, times(1)).validateUserExists(userId);
         verify(postService, times(1)).findPostOrThrow(postId);
         verify(commentRepository, times(1)).save(any(Comment.class));
-        verify(commentEventPublisher, times(1)).publish(any(CommentEvent.class));
+        verify(eventPublisher, times(1)).publishEvent(any(CommentEvent.class));
     }
 
     @Test
@@ -115,7 +115,7 @@ class CommentServiceTest {
 
         verifyNoMoreInteractions(commentRepository);
         verify(commentRepository, never()).save(any(Comment.class));
-        verify(commentEventPublisher, never()).publish(any(CommentEvent.class));
+        verify(eventPublisher, never()).publishEvent(any(CommentEvent.class));
     }
 
     @Test
@@ -127,26 +127,23 @@ class CommentServiceTest {
         commentService.createComment(userId, createRequest);
 
         ArgumentCaptor<CommentEvent> eventCaptor = ArgumentCaptor.forClass(CommentEvent.class);
-        verify(commentEventPublisher, times(1)).publish(eventCaptor.capture());
+        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
         CommentEvent event = eventCaptor.getValue();
 
         assertNotNull(event);
         assertEquals(savedComment.getId(), event.getCommentId());
-        assertEquals(userId, event.getAuthorId());
         assertEquals(postId, event.getPostId());
         assertEquals(savedComment.getCreatedAt(), event.getCommentedAt());
 
-        InOrder inOrder = Mockito.inOrder(commentRepository, commentEventPublisher);
+        InOrder inOrder = Mockito.inOrder(commentRepository, eventPublisher);
         inOrder.verify(commentRepository, times(1)).save(any(Comment.class));
-        inOrder.verify(commentEventPublisher, times(1)).publish(any(CommentEvent.class));
+        inOrder.verify(eventPublisher, times(1)).publishEvent(any(CommentEvent.class));
         inOrder.verifyNoMoreInteractions();
     }
 
     @Test
     @DisplayName("Should update comment successfully when all data is valid")
     void updateComment_shouldUpdateComment_whenAllDataValid() {
-        savedComment.setUpdatedAt(ZonedDateTime.now().minusDays(1));
-
         when(commentRepository.findById(commentId)).thenReturn(Optional.of(savedComment));
         when(commentRepository.save(any(Comment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

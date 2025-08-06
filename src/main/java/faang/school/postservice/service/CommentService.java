@@ -7,12 +7,12 @@ import faang.school.postservice.event.CommentEvent;
 import faang.school.postservice.mapper.CommentMapper;
 import faang.school.postservice.model.Comment;
 import faang.school.postservice.model.Post;
-import faang.school.postservice.publisher.redis.CommentEventPublisher;
 import faang.school.postservice.repository.CommentRepository;
 import faang.school.postservice.validator.CommentValidation;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,12 +27,12 @@ import java.time.ZonedDateTime;
 @Service
 public class CommentService {
 
-    private final AuthorValidationService  authorValidationService;
     private final PostService postService;
-    private final CommentMapper commentMapper;
+    private final AuthorValidationService  authorValidationService;
     private final CommentValidation commentValidation;
+    private final CommentMapper commentMapper;
     private final CommentRepository commentRepository;
-    private final CommentEventPublisher commentEventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CommentResponse createComment(long userId, CommentCreateRequest commentCreateRequest) {
@@ -48,12 +48,11 @@ public class CommentService {
                 comment.getId(), comment.getPost().getId(), comment.getAuthorId());
 
         CommentEvent event = CommentEvent.builder()
-                .commentId(comment.getId())
-                .authorId(comment.getAuthorId())
                 .postId(comment.getPost().getId())
+                .commentId(comment.getId())
                 .commentedAt(comment.getCreatedAt())
                 .build();
-        commentEventPublisher.publish(event);
+        eventPublisher.publishEvent(event);
 
         return commentMapper.toResponse(comment);
     }

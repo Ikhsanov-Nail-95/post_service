@@ -44,7 +44,7 @@ public class LikeController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public LikeResponse likeEntity(
-            @RequestBody(required = true) @Valid @Parameter(description = "Like request data") LikeRequest likeRequest
+            @RequestBody @Valid @Parameter(description = "Like request data") LikeRequest likeRequest
     ) {
         long userId = userContext.getUserId();
         return likeService.likeEntity(userId, likeRequest);
@@ -92,4 +92,5 @@ public class LikeController {
     ) {
         return likeService.getUsersWhoLikedEntity(targetType, entityId);
     }
+
 }

@@ -1,7 +1,13 @@
+server:
+  port: 8081
+
 spring:
   mvc:
     servlet:
       path: /api/v1
+
+  main:
+    allow-bean-definition-overriding: false
 
   output:
     ansi:
@@ -31,9 +37,11 @@ spring:
       host: localhost
       # Каналы для Pub/Sub механизма Redis
       channels:
-        user-banner-event: "app:user:banner"
-        post-liked-event: "app:post:liked"
-        post-commented-event: "app:post:commented"
+        post-view-event: "app:post:viewed"
+        comment-event: "app:comment:created"
+        like-event: "app:post:liked"
+        user-banner-event: "app:user:banned"
+
 
     kafka:
       bootstrap-servers: localhost:9092
@@ -66,20 +74,27 @@ spring:
         partitions_feed_heat: 5 #TODO: Пока непонятно сколько вообще нужно ставить, надо в конце последней таски смотреть
         replication_feed_heat: 3
 
-server:
-  port: 8081
+  task:
+    execution:
+      pool:
+        core-size: 5
+        max-size: 20
+        queue-capacity: 100
+        threadNamePrefix: "PostAnalytics-"
 
 logging: #TODO: Непонятно зачем нужно
   level:
     root: info
 
-# Конфиги сервисов (FeignClient)
+# Feign-клиенты
 user-service:
   host: localhost
   port: 8080
+
 project-service:
   host: localhost
   port: 8082
+
 payment-service:
   host: localhost
   port: 9080
@@ -88,11 +103,10 @@ payment-service:
 scheduled:
   author-banner: "@daily"
 
-# Лимиты валидации
+# Лимиты
 limits:
-  unverified_post_limit: 5
-
-# Лимит на размер батча при обращении к user_service
-like:
-  user-fetch:
-    batch-size: 100
+  post:
+    unverified_post_limit: 5
+  like:
+    user-fetch:
+      batch-size: 100

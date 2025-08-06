@@ -9,14 +9,17 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OpenApiConfig {
+
+    private static final String USER_ID_HEADER = "X-User-Id";
+
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                .addSecurityItem(new SecurityRequirement().addList("X-User-Id"))
+                .addSecurityItem(new SecurityRequirement().addList(USER_ID_HEADER))
                 .components(new Components()
-                        .addSecuritySchemes("X-User-Id",
+                        .addSecuritySchemes(USER_ID_HEADER,
                                 new SecurityScheme()
-                                        .name("X-User-Id")
+                                        .name(USER_ID_HEADER)
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER))
                 );

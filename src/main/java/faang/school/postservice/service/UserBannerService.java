@@ -21,7 +21,7 @@ public class UserBannerService {
     private final PostRepository postRepository;
     private final UserBannerEventPublisher userBannerEventPublisher;
 
-    @Value("${limits.unverified_post_limit}")
+    @Value("${limits.post.unverified_post_limit}")
     private int unverifiedPostLimit;
 
     @Transactional
@@ -30,7 +30,7 @@ public class UserBannerService {
         Map<Long, Long> unverifiedPostsByUsers = unverifiedPosts.stream()
                 .collect(Collectors.groupingBy((Post::getAuthorId), Collectors.counting()));
         List<Long> userIdsToBan = unverifiedPostsByUsers.entrySet().stream()
-                .filter((entry) -> entry.getValue() >= unverifiedPostLimit)
+                .filter(entry -> entry.getValue() >= unverifiedPostLimit)
                 .map(Map.Entry::getKey)
                 .toList();
 

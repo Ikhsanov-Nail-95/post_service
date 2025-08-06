@@ -9,11 +9,12 @@ import faang.school.postservice.service.CommentService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CommentLikeStrategy extends AbstractLikeStrategy {
+
     private final CommentService commentService;
+
     public CommentLikeStrategy(CommentService commentService,
                                LikeRepository likeRepository,
                                UserFetcherHelper userFetcherHelper) {
@@ -27,17 +28,16 @@ public class CommentLikeStrategy extends AbstractLikeStrategy {
     }
 
     @Override
-    protected Like createAndSaveLike(long userId, long commentId) {
+    protected LikeResult createAndSaveLikeWithAuthor(long userId, long commentId) {
         Comment comment = commentService.findCommentOrThrow(commentId);
-        return likeRepository.save(Like.builder()
+        long authorId = comment.getAuthorId();
+
+        Like like = likeRepository.save(Like.builder()
                 .userId(userId)
                 .comment(comment)
                 .build());
-    }
 
-    @Override
-    protected Optional<Like> findLike(long userId, long commentId) {
-        return likeRepository.findByUserIdAndCommentId(userId, commentId);
+        return new LikeResult(like, authorId);
     }
 
     @Override
@@ -50,4 +50,5 @@ public class CommentLikeStrategy extends AbstractLikeStrategy {
         List<Long> userIds = likeRepository.findUserIdsByCommentId(commentId);
         return userFetcherHelper.fetchUsersInBatches(userIds);
     }
+
 }

@@ -9,10 +9,10 @@ import faang.school.postservice.service.PostService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PostLikeStrategy extends AbstractLikeStrategy {
+
     private final PostService postService;
 
     public PostLikeStrategy(PostService postService,
@@ -28,17 +28,16 @@ public class PostLikeStrategy extends AbstractLikeStrategy {
     }
 
     @Override
-    protected Like createAndSaveLike(long userId, long postId) {
+    protected LikeResult createAndSaveLikeWithAuthor(long userId, long postId) {
         Post post = postService.findPostOrThrow(postId);
-        return likeRepository.save(Like.builder()
+        long authorId = post.getAuthorId();
+
+        Like like = likeRepository.save(Like.builder()
                 .userId(userId)
                 .post(post)
                 .build());
-    }
 
-    @Override
-    protected Optional<Like> findLike(long userId, long postId) {
-        return likeRepository.findByUserIdAndPostId(userId, postId);
+        return new LikeResult(like, authorId);
     }
 
     @Override
@@ -51,4 +50,5 @@ public class PostLikeStrategy extends AbstractLikeStrategy {
         List<Long> userIds = likeRepository.findUserIdsByPostId(postId);
         return userFetcherHelper.fetchUsersInBatches(userIds);
     }
+
 }

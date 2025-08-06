@@ -1,5 +1,8 @@
 package faang.school.postservice.publisher.redis;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import faang.school.postservice.exception.JsonSerializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,18 +11,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
-import org.springframework.data.redis.serializer.SerializationException;
-import faang.school.postservice.exception.JsonSerializationException;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AbstractRedisEventPublisherTest {
 
     @Mock
+    private ObjectMapper objectMapper;
+    @Mock
     private RedisTemplate<String, Object> redisTemplate;
-
     @Mock
     private ChannelTopic channelTopic;
 
@@ -31,30 +35,27 @@ class AbstractRedisEventPublisherTest {
     @BeforeEach
     void setUp() {
         when(channelTopic.getTopic()).thenReturn(topic);
-        publisher = new AbstractRedisEventPublisher<>(redisTemplate, channelTopic) {};
+        publisher = new AbstractRedisEventPublisher<>(objectMapper, redisTemplate, channelTopic) {};
     }
 
     @Test
     @DisplayName("Should publish event to Redis channel")
-    void publish_shouldSendEventToRedis() {
+    void publish_shouldSendEventToRedis() throws JsonProcessingException {
+        when(objectMapper.writeValueAsString(event)).thenReturn(event);
         publisher.publish(event);
         verify(redisTemplate).convertAndSend(topic, event);
     }
 
     @Test
     @DisplayName("Should throw JsonSerializationException when RedisTemplate throws SerializationException")
-    void publish_shouldThrowException_whenSerializationFails() {
-        SerializationException serializationException = new SerializationException("test serialization failure");
+    void publish_shouldThrowException_whenSerializationFails() throws JsonProcessingException {
+        when(objectMapper.writeValueAsString(event)).thenThrow(new JsonProcessingException("Serialization failed") {});
 
-        doThrow(serializationException)
-                .when(redisTemplate)
-                .convertAndSend(topic, event);
-
-        JsonSerializationException thrown = assertThrows(
+        JsonSerializationException exception = assertThrows(
                 JsonSerializationException.class,
                 () -> publisher.publish(event)
         );
 
-        assertEquals("Failed to serialize event: " + event + " to JSON", thrown.getMessage());
+        assertTrue(exception.getMessage().contains("Unable to serialize event"));
     }
 }

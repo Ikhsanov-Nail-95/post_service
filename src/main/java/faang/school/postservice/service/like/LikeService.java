@@ -7,10 +7,10 @@ import faang.school.postservice.event.LikeEvent;
 import faang.school.postservice.mapper.LikeMapper;
 import faang.school.postservice.model.Like;
 import faang.school.postservice.model.enums.LikeTargetType;
-import faang.school.postservice.publisher.EventPublisher;
 import faang.school.postservice.service.AuthorValidationService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +26,7 @@ public class LikeService {
     private final PostLikeStrategy postLikeStrategy;
     private final CommentLikeStrategy commentLikeStrategy;
     private final AuthorValidationService authorValidationService;
-    private final EventPublisher<LikeEvent> likeEventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final Map<LikeTargetType, LikeStrategy> strategies = new EnumMap<>(LikeTargetType.class);
 
@@ -41,16 +41,16 @@ public class LikeService {
         authorValidationService.validateUserExists(userId);
 
         LikeStrategy strategy = getStrategyOrThrow(likeRequest.getTargetType());
-        Like like = strategy.handleLike(userId, likeRequest.getEntityId());
+        LikeResult result = strategy.handleLike(userId, likeRequest.getEntityId());
 
+        Like like = result.like();
         LikeEvent event = LikeEvent.builder()
-                .likeId(like.getId())
-                .userId(userId)
                 .entityId(likeRequest.getEntityId())
-                .likeTargetType(likeRequest.getTargetType())
+                .targetType(likeRequest.getTargetType())
+                .likeId(like.getId())
                 .likedAt(like.getCreatedAt())
                 .build();
-        likeEventPublisher.publish(event);
+        eventPublisher.publishEvent(event);
 
         return likeMapper.toResponse(like);
     }
@@ -76,4 +76,5 @@ public class LikeService {
         }
         return strategy;
     }
+
 }

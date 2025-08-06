@@ -17,24 +17,31 @@ import org.springframework.validation.annotation.Validated;
 public class RedisChannelsConfig {
 
     @NotEmpty
+    private String postViewEvent;
+    @NotEmpty
+    private String commentEvent;
+    @NotEmpty
+    private String likeEvent;
+    @NotEmpty
     private String userBannerEvent;
-    @NotEmpty
-    private String postLikedEvent;
-    @NotEmpty
-    private String postCommentedEvent;
 
     @Bean
-    public ChannelTopic userBannerEventTopic(){
+    public ChannelTopic postViewTopic() {
+        return new ChannelTopic(postViewEvent);
+    }
+
+    @Bean
+    public ChannelTopic commentTopic() {
+        return new ChannelTopic(commentEvent);
+    }
+
+    @Bean
+    public ChannelTopic likeTopic() {
+        return new ChannelTopic(likeEvent);
+    }
+
+    @Bean
+    public ChannelTopic userBannerTopic() {
         return new ChannelTopic(userBannerEvent);
-    }
-
-    @Bean
-    public ChannelTopic postLikedEventTopic(){
-        return new ChannelTopic(postLikedEvent);
-    }
-
-    @Bean
-    public ChannelTopic postCommentedEventTopic() {
-        return new ChannelTopic(postCommentedEvent);
     }
 }

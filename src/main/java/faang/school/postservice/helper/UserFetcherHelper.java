@@ -17,7 +17,7 @@ public class UserFetcherHelper {
 
     private final UserServiceGateway userServiceGateway;
 
-    @Value("${like.user-fetch.batch-size}")
+    @Value("${limits.like.user-fetch.batch-size}")
     private int batchSize;
 
     public List<UserDto> fetchUsersInBatches(List<Long> userIds) {
@@ -41,4 +41,5 @@ public class UserFetcherHelper {
 
         return result;
     }
+
 }

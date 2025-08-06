@@ -2,6 +2,7 @@ package faang.school.postservice.handler;
 
 import faang.school.postservice.dto.response.ErrorResponse;
 import faang.school.postservice.exception.DataValidationException;
+import faang.school.postservice.exception.EventPublishException;
 import faang.school.postservice.exception.JsonSerializationException;
 import faang.school.postservice.exception.UserServiceUnavailableException;
 import jakarta.persistence.EntityNotFoundException;
@@ -82,6 +83,19 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(EventPublishException.class)
+    public ProblemDetail handleEventPublishException(EventPublishException ex, HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+
+        problem.setTitle("Redis Publish Error");
+        problem.setDetail(ex.getMessage());
+        problem.setProperty(EXCEPTION, ex.getClass().getSimpleName());
+        problem.setInstance(URI.create("/api/v1/errors/redis-publish"));
+        problem.setProperty(PATH, request.getRequestURI());
+
+        return problem;
+    }
+
     @ExceptionHandler(EntityNotFoundException.class)
     public ProblemDetail handleEntityNotFoundException(EntityNotFoundException ex, HttpServletRequest request) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
@@ -136,4 +150,5 @@ public class GlobalExceptionHandler {
         ZonedDateTime zonedDateTime = ZonedDateTime.now();
         return zonedDateTime.format(formatter);
     }
+
 }

@@ -11,9 +11,8 @@ import java.time.ZonedDateTime;
 @Builder
 @AllArgsConstructor
 public class LikeEvent {
-    private long likeId;
-    private long userId;
     private long entityId;
-    private LikeTargetType likeTargetType;
+    private LikeTargetType targetType;
+    private long likeId;
     private ZonedDateTime likedAt;
 }

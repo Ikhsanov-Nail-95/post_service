@@ -9,8 +9,8 @@ import java.time.ZonedDateTime;
 @Getter
 @Builder
 @AllArgsConstructor
-public class CommentEvent {
+public class PostViewEvent {
     private long postId;
-    private long commentId;
-    private ZonedDateTime commentedAt;
+    private long viewerUserId;
+    private ZonedDateTime viewedAt;
 }

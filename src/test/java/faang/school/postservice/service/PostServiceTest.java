@@ -4,6 +4,7 @@ import faang.school.postservice.dto.request.PostCreateRequest;
 import faang.school.postservice.dto.request.PostUpdateRequest;
 import faang.school.postservice.dto.response.PostResponse;
 import faang.school.postservice.exception.DataValidationException;
+import faang.school.postservice.helper.PostAnalyticsEventHelper;
 import faang.school.postservice.mapper.PostMapperImpl;
 import faang.school.postservice.model.Post;
 import faang.school.postservice.repository.PostRepository;
@@ -32,25 +33,27 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
-    @Mock private PostValidator postValidator;
     @Mock private AuthorValidationService authorValidationService;
+    @Mock private PostValidator postValidator;
     @Mock private PostRepository postRepository;
+    @Mock private PostAnalyticsEventHelper postAnalyticsEventHelper;
+
     @Spy private PostMapperImpl postMapper = new PostMapperImpl();
 
     @InjectMocks private PostService postService;
 
     private long postId;
     private long userIdOrProjectId;
-
+    private long viewerUserId;
     private PostResponse postResponse;
     private Post post;
-
     List<PostResponse> listPostResponse;
 
     @BeforeEach
     void setUp() {
         postId = 0L;
         userIdOrProjectId = 1L;
+        viewerUserId = 2L;
 
         post = Post.builder()
                 .id(postId)
@@ -223,14 +226,13 @@ class PostServiceTest {
     void getPostById_shouldReturnPost_whenExists() {
         when(postRepository.findById(postId)).thenReturn(Optional.of(post));
 
-        postResponse = postService.getPostById(postId);
+        postResponse = postService.getPostById(postId, viewerUserId);
 
         assertEquals(post.getId(), postResponse.getId());
         assertEquals(post.getTitle(), postResponse.getTitle());
         assertEquals(post.getContent(), postResponse.getContent());
         assertEquals(post.getAuthorId(), postResponse.getAuthorId());
     }
-
 
     @Test
     @DisplayName("Should return list of posts when title matches")
@@ -240,7 +242,7 @@ class PostServiceTest {
 
         when(postRepository.findByTitle(titlePart)).thenReturn(posts);
 
-        listPostResponse = postService.getPostByTitle(titlePart);
+        listPostResponse = postService.getPostByTitle(titlePart, viewerUserId);
 
         assertEquals(1, listPostResponse.size());
 
@@ -261,7 +263,7 @@ class PostServiceTest {
 
         when(postRepository.findDraftPostsByAuthor(userIdOrProjectId)).thenReturn(draftPosts);
 
-        listPostResponse = postService.getDraftsByAuthorId(userIdOrProjectId);
+        listPostResponse = postService.getDraftsByAuthorId(userIdOrProjectId, viewerUserId);
 
         assertPostResponseTitles(listPostResponse, "Post 1", "Post 2");
 
@@ -277,7 +279,7 @@ class PostServiceTest {
 
         when(postRepository.findDraftPostsByProject(userIdOrProjectId)).thenReturn(draftPosts);
 
-        listPostResponse = postService.getDraftsByProjectId(userIdOrProjectId);
+        listPostResponse = postService.getDraftsByProjectId(userIdOrProjectId, viewerUserId);
 
         assertPostResponseTitles(listPostResponse, "Post 1", "Post 2");
 
@@ -293,7 +295,7 @@ class PostServiceTest {
 
         when(postRepository.findByAuthorIdWithLikes(userIdOrProjectId)).thenReturn(postsPublished);
 
-        listPostResponse = postService.getPostsByAuthorId(userIdOrProjectId);
+        listPostResponse = postService.getPostsByAuthorId(userIdOrProjectId, viewerUserId);
 
         assertPostResponseTitles(listPostResponse, "Post 1", "Post 2");
 
@@ -309,7 +311,7 @@ class PostServiceTest {
 
         when(postRepository.findByProjectIdWithLikes(userIdOrProjectId)).thenReturn(postsPublished);
 
-        listPostResponse = postService.getPostsByProjectId(userIdOrProjectId);
+        listPostResponse = postService.getPostsByProjectId(userIdOrProjectId, viewerUserId);
 
         assertPostResponseTitles(listPostResponse, "Post 1", "Post 2");
 
