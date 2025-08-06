@@ -3,10 +3,8 @@ package faang.school.postservice.model;
 import faang.school.postservice.model.ad.Ad;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Getter
@@ -21,6 +19,9 @@ public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
+    @Column(name = "title", nullable = false, length = 255)
+    private String title;
 
     @Column(name = "content", nullable = false, length = 4096)
     private String content;
@@ -49,27 +50,34 @@ public class Post {
     @Column(name = "published", nullable = false)
     private boolean published;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "published_at")
-    private LocalDateTime publishedAt;
+    private ZonedDateTime publishedAt;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "scheduled_at")
-    private LocalDateTime scheduledAt;
+    private ZonedDateTime scheduledAt;
 
     @Column(name = "deleted", nullable = false)
     private boolean deleted;
 
-    @CreationTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", updatable = false)
+    private ZonedDateTime createdAt;
 
-    @UpdateTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private ZonedDateTime updatedAt;
 
     @Column(name = "verified", nullable = false)
     private Boolean verified;
+
+    @PrePersist
+    protected void onCreate() {
+        ZonedDateTime now = ZonedDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = ZonedDateTime.now();
+    }
+
 }

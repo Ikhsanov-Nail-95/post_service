@@ -1,47 +1,96 @@
 package faang.school.postservice.controller;
 
-import faang.school.postservice.dto.like.LikeDto;
-import faang.school.postservice.service.LikeService;
+import faang.school.postservice.client.dto.UserDto;
+import faang.school.postservice.config.context.UserContext;
+import faang.school.postservice.dto.request.LikeRequest;
+import faang.school.postservice.dto.response.LikeResponse;
+import faang.school.postservice.model.enums.LikeTargetType;
+import faang.school.postservice.service.like.LikeService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@Tag(name = "Like Controller", description = "Endpoints for liking and unliking posts/comments")
 @Validated
-@RestController
 @RequiredArgsConstructor
-@RequestMapping
+@RestController
+@RequestMapping("/likes")
 public class LikeController {
 
     private final LikeService likeService;
+    private final UserContext userContext;
 
-    @PostMapping("/post/{postId}")
-    @Operation(summary = "Like post")
-    public LikeDto likePost(@RequestBody @Validated LikeDto likeDto) {
-        return likeService.likePost(likeDto);
+    @Operation(
+            summary = "Add like a target entity (post, comment, etc.)",
+            description = "Creates a like from the current user for a given target (post, comment, etc.)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Like successfully created"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "User not authorized"),
+            @ApiResponse(responseCode = "404", description = "Target entity not found")
+    })
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public LikeResponse likeEntity(
+            @RequestBody @Valid @Parameter(description = "Like request data") LikeRequest likeRequest
+    ) {
+        long userId = userContext.getUserId();
+        return likeService.likeEntity(userId, likeRequest);
     }
 
-    @DeleteMapping("/post/{postId}")
-    @Operation(summary = "Remove like from post")
-    public void deleteLikeFromPost(@Valid @PathVariable Long postId) {
-        likeService.deleteLikeFromPost(postId);
+    @Operation(
+            summary = "Remove a target entity (post, comment, etc.)",
+            description = "Removes an existing like for the given target entity by the current user"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Like successfully removed"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "User not authorized"),
+            @ApiResponse(responseCode = "404", description = "Like or target not found")
+    })
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unlikeEntity(
+            @RequestBody @Valid @Parameter(description = "Like request data") LikeRequest likeRequest
+    ) {
+        long userId = userContext.getUserId();
+        likeService.unlikeEntity(userId, likeRequest);
     }
 
-    @PostMapping("/comment/{commentId}")
-    @Operation(summary = "Like comment")
-    public LikeDto likeComment(@RequestBody @Validated LikeDto likeDto) {
-        return likeService.likeComment(likeDto);
+    @Operation(
+            summary = "Get users who liked a specific entity",
+            description = "Returns a list of users who liked a specific entity, based on its ID and type"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of users retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid entity type or ID"),
+            @ApiResponse(responseCode = "404", description = "Entity not found")
+    })
+    @GetMapping("/users")
+    List<UserDto> getUsersWhoLikedEntity(
+            @RequestParam
+            @NotNull(message = "Like target type must not be null")
+            @Parameter(description = "Type of liked entity (POST or COMMENT or etc.)", example = "POST")
+            LikeTargetType targetType,
+
+            @RequestParam
+            @Min(value = 1, message = "Entity ID must be greater than 0")
+            @Parameter(description = "ID of the liked entity (post, comment, etc.)", example = "123")
+            long entityId
+    ) {
+        return likeService.getUsersWhoLikedEntity(targetType, entityId);
     }
 
-    @DeleteMapping("/comment/{commentId}")
-    @Operation(summary = "Remove like from comment")
-    public void deleteLikeFromComment(@Valid @PathVariable Long commentId) {
-        likeService.deleteLikeFromComment(commentId);
-    }
 }

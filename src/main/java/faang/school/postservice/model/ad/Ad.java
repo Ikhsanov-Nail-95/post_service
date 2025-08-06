@@ -36,4 +36,5 @@ public class Ad {
     @Column(name = "end_date", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime endDate;
+
 }

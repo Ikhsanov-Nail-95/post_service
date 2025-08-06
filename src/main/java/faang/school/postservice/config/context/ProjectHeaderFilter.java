@@ -2,35 +2,46 @@ package faang.school.postservice.config.context;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 @Component
 public class ProjectHeaderFilter implements Filter {
 
     private final ProjectContext projectContext;
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest req = (HttpServletRequest) request;
-        String projectId = req.getHeader("x-project-id");
-        try {
-            if (projectId != null) {
-                projectContext.setProjectId(Long.parseLong(projectId));
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String projectIdHeader = httpRequest.getHeader("X-Project-Id");
+
+        if (projectIdHeader != null) {
+            try {
+                long projectId = Long.parseLong(projectIdHeader);
+                projectContext.setProjectId(projectId);
                 log.info("Project ID set to: {}", projectId);
+            } catch (NumberFormatException e) {
+                log.error("Invalid X-Project-Id header value: {}", projectIdHeader, e);
+                ((HttpServletResponse) response).sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid X-Project-Id format");
+                return;
             }
+        } else {
+            log.debug("No X-Project-Id header found, skipping");
+        }
+
+        try {
             chain.doFilter(request, response);
-        } catch (NumberFormatException e) {
-            log.error("Failed to parse project ID: {}", projectId, e);
-            throw new ServletException("Invalid project ID format", e);
         } finally {
             projectContext.clear();
-            log.info("Project ID cleared");
+            log.debug("ProjectContext cleared after request");
         }
     }
 }

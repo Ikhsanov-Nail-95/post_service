@@ -1,74 +1,100 @@
 package faang.school.postservice.service;
 
-import faang.school.postservice.dto.comment.CommentDto;
-import faang.school.postservice.dto.comment.CommentEvent;
+import faang.school.postservice.dto.request.CommentCreateRequest;
+import faang.school.postservice.dto.request.CommentUpdateRequest;
+import faang.school.postservice.dto.response.CommentResponse;
+import faang.school.postservice.event.CommentEvent;
 import faang.school.postservice.mapper.CommentMapper;
 import faang.school.postservice.model.Comment;
 import faang.school.postservice.model.Post;
-import faang.school.postservice.publisher.CommentEventPublisher;
 import faang.school.postservice.repository.CommentRepository;
 import faang.school.postservice.validator.CommentValidation;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
+import java.time.ZonedDateTime;
 
-@Service
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
+@Service
 public class CommentService {
-    private final CommentRepository commentRepository;
-    private final CommentMapper commentMapper;
+
     private final PostService postService;
+    private final AuthorValidationService  authorValidationService;
     private final CommentValidation commentValidation;
-    private final CommentEventPublisher commentEventPublisher;
+    private final CommentMapper commentMapper;
+    private final CommentRepository commentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public CommentDto create(CommentDto commentDto, long userId) {
-        commentValidation.authorExistenceValidation(userId);
-        Comment comment = commentMapper.toEntity(commentDto);
-        comment.setLikes(Collections.EMPTY_LIST);
-        comment.setPost(postService.existsPost(commentDto.getPostId()));
-        Comment newComment = commentRepository.save(comment);
+    @Transactional
+    public CommentResponse createComment(long userId, CommentCreateRequest commentCreateRequest) {
+        authorValidationService.validateUserExists(userId);
+        Post post = postService.findPostOrThrow(commentCreateRequest.getPostId());
+
+        Comment comment = commentMapper.toEntity(commentCreateRequest);
+        comment.setAuthorId(userId);
+        comment.setPost(post);
+        comment = commentRepository.save(comment);
+
+        log.info("Created comment with ID={} for postId={} by authorId={}",
+                comment.getId(), comment.getPost().getId(), comment.getAuthorId());
+
         CommentEvent event = CommentEvent.builder()
-                .commentId(newComment.getId())
-                .authorId(newComment.getAuthorId())
-                .commentedAt(newComment.getCreatedAt())
-                .postId(newComment.getPost().getId())
+                .postId(comment.getPost().getId())
+                .commentId(comment.getId())
+                .commentedAt(comment.getCreatedAt())
                 .build();
-        commentEventPublisher.publish(event);
-        return commentMapper.toDto(newComment);
+        eventPublisher.publishEvent(event);
+
+        return commentMapper.toResponse(comment);
     }
 
-    public CommentDto update(CommentDto commentDto, long userId) {
-        commentValidation.authorExistenceValidation(userId);
+    @Transactional
+    public CommentResponse updateComment(long commentId, CommentUpdateRequest commentUpdateRequest) {
+        Comment comment = findCommentOrThrow(commentId);
+        commentValidation.ensureCurrentActorIsAuthor(comment.getAuthorId());
 
-        commentValidation.validateCommentExistence(commentDto.getId());
+        commentMapper.update(comment, commentUpdateRequest);
+        comment.setUpdatedAt(ZonedDateTime.now());
 
-        Comment comment = commentRepository.findById(commentDto.getId()).get();
-        comment.setContent(commentDto.getContent());
+        comment = commentRepository.save(comment);
+        log.info("Updated comment with ID={} by authorId={}", comment.getId(), comment.getAuthorId());
 
-        commentRepository.save(comment);
-
-        return commentMapper.toDto(comment);
+        return commentMapper.toResponse(comment);
     }
 
-    public List<CommentDto> getPostComments(Long postId) {
-        Post post = postService.existsPost(postId);
-        List<Comment> comments = post.getComments();
-        return commentMapper.toDto(comments);
+    @Transactional
+    public void deleteComment(long commentId) {
+        Comment comment = findCommentOrThrow(commentId);
+        commentValidation.ensureCurrentActorIsAuthor(comment.getAuthorId());
+
+        commentRepository.deleteById(commentId);
+        log.info("Deleted comment with ID={} by authorId={}", commentId, comment.getAuthorId());
     }
 
-    public void delete(CommentDto commentDto, Long userId) {
-        commentValidation.authorExistenceValidation(userId);
-        commentValidation.validateCommentExistence(commentDto.getId());
-        commentRepository.deleteById(commentDto.getId());
+    @Transactional(readOnly = true)
+    public Page<CommentResponse> getCommentsByPostId(long postId, int page, int size) {
+        log.info("Fetching comments for postId={}, page={}, size={}", postId, page, size);
+
+        postService.findPostOrThrow(postId);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Comment> commentPage = commentRepository.findCommentsByPostId(postId, pageable);
+
+        return commentPage.map(commentMapper::toResponse);
     }
 
-    public Comment findCommentById(Long commentId) {
+    public Comment findCommentOrThrow(long commentId) {
         return commentRepository.findById(commentId)
-                .orElseThrow(() -> new EntityNotFoundException("Comment by id: " + commentId + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Comment with ID " + commentId + " not found"));
     }
+
 }

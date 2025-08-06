@@ -1,82 +1,73 @@
 package faang.school.postservice.validator;
 
-import faang.school.postservice.client.ProjectServiceClient;
-import faang.school.postservice.client.UserServiceClient;
 import faang.school.postservice.config.context.ProjectContext;
 import faang.school.postservice.config.context.UserContext;
-import faang.school.postservice.dto.PostDto;
+import faang.school.postservice.dto.request.PostCreateRequest;
 import faang.school.postservice.exception.DataValidationException;
 import faang.school.postservice.model.Post;
-import feign.FeignException;
-import jakarta.persistence.EntityNotFoundException;
+import faang.school.postservice.service.AuthorValidationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
-@Component
+@Service
 public class PostValidator {
 
     private final UserContext userContext;
     private final ProjectContext projectContext;
-    private final UserServiceClient userServiceClient;
-    private final ProjectServiceClient projectServiceClient;
+    private final AuthorValidationService authorValidationService;
 
-    public void validateAuthor(PostDto postDto) {
-        if (postDto.getAuthorId() == null && postDto.getProjectId() == null) {
-            throw new DataValidationException("The post does not have an author specified");
+
+    public void validateAuthor(PostCreateRequest postCreateRequest) {
+        Long userId = postCreateRequest.getAuthorId();
+        Long projectId = postCreateRequest.getProjectId();
+
+        if (userId == null && projectId == null) {
+            throw new DataValidationException("Post must have an author: either a user or a project.");
         }
-        if (postDto.getAuthorId() != null && postDto.getProjectId() != null) {
-            throw new DataValidationException("A post cannot have two authors");
+        if (userId != null && projectId != null) {
+            throw new DataValidationException("Post cannot have both a user and a project as authors.");
         }
-        if (postDto.getAuthorId() != null && userServiceClient.getUser(postDto.getAuthorId()) == null) {
-            throw new DataValidationException("The author must be an existing user in the system");
+
+        if (userId != null) {
+            authorValidationService.validateUserExists(userId);
         }
-        if (postDto.getProjectId() != null && projectServiceClient.getProject(postDto.getProjectId()) == null) {
-            throw new DataValidationException("The author must be an existing project in the system");
+        if (projectId != null) {
+            authorValidationService.validateProjectExists(projectId);
         }
     }
 
-    public void isPublishedPost(Post post) {
-        if (post.isPublished()) {
-            throw new DataValidationException("The post cannot publish that has already been published before");
+    public void ensureCurrentActorIsAuthor(Post post) {
+        Long userId = post.getAuthorId();
+        Long projectId = post.getProjectId();
+
+        if (userId != null && projectId == null) {
+            if (!userId.equals(userContext.getUserId())) {
+                throw new DataValidationException("Only the author user can perform this action.");
+            }
+            return;
         }
+
+        if (projectId != null && userId == null) {
+            if (!projectId.equals(projectContext.getProjectId())) {
+                throw new DataValidationException("Only the author project can perform this action.");
+            }
+            return;
+        }
+
+        throw new DataValidationException("Post must have exactly one author: either a user or a project.");
     }
 
-    public void isDeletedPost(Post post) {
+    public void ensureNotDeleted(Post post) {
         if (post.isDeleted()) {
-            throw new DataValidationException("The post cannot delete that has already been deleted before");
+            throw new DataValidationException("The post has already been deleted.");
         }
     }
 
-    public void checkPostAuthorship(Post post) {
-        if ((post.getAuthorId() != null && post.getAuthorId() != getContextUserId())
-                || (post.getProjectId() != null && post.getProjectId() != getContextProjectId())) {
-            throw new DataValidationException("You are not the author of this post or the project does not match");
+    public void ensureNotPublished(Post post) {
+        if (post.isPublished()) {
+            throw new DataValidationException("The post cannot be published again.");
         }
-    }
-
-    public void validateUserExist(long userId) {
-        try {
-            userServiceClient.getUser(userId);
-        } catch (FeignException e) {
-            throw new EntityNotFoundException("This user is not found");
-        }
-    }
-
-    public void validateProjectExist(long projectId) {
-        try {
-            projectServiceClient.getProject(projectId);
-        } catch (FeignException e) {
-            throw new EntityNotFoundException("This project is not found");
-        }
-    }
-
-    private long getContextUserId() {
-        return userContext.getUserId();
-    }
-
-    private long getContextProjectId() {
-        return projectContext.getProjectId();
     }
 
 }

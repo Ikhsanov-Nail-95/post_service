@@ -1,46 +1,43 @@
 package faang.school.postservice.mapper;
 
-import faang.school.postservice.dto.PostDto;
+import faang.school.postservice.dto.request.PostCreateRequest;
+import faang.school.postservice.dto.request.PostUpdateRequest;
+import faang.school.postservice.dto.response.PostResponse;
 import faang.school.postservice.model.Comment;
 import faang.school.postservice.model.Like;
 import faang.school.postservice.model.Post;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PostMapper {
 
-    @Mapping(target = "likes", expression = "java(new ArrayList<>())")
-    @Mapping(target = "comments", expression = "java(new ArrayList<>())")
-    @Mapping(target = "published", expression = "java(false)")
-    @Mapping(target = "deleted", expression = "java(false)")
-    Post toEntity(PostDto postDto);
+    Post toEntity(PostCreateRequest postCreateRequest);
 
-    @Mapping(source = "likes", target = "likeIds", qualifiedByName = "toLikeIds")
-    @Mapping(source = "comments", target = "commentsIds", qualifiedByName = "toCommentsIds")
-    PostDto toDto(Post post);
+    void update(@MappingTarget Post post, PostUpdateRequest postUpdateRequest);
 
-    List<PostDto> toDto(List<Post> posts);
+    @Mapping(source = "likes", target = "likeIds", qualifiedByName = "mapLikesToLikeIds")
+    @Mapping(source = "comments", target = "commentsIds", qualifiedByName = "mapCommentsToCommentIds")
+    @Mapping(expression = "java(post.getLikes() != null ? post.getLikes().size() : 0)", target = "likeCount")
+    PostResponse toResponse(Post post);
 
-    @Named("toLikeIds")
-    default List<Long> toLikeIds(List<Like> likes) {
-        if (likes == null) {
-            return new ArrayList<>();
+    List<PostResponse> toResponseList(List<Post> posts);
+
+    @Named("mapLikesToLikeIds")
+    default List<Long> mapLikesToLikeIds(List<Like> likes) {
+        if (likes == null || likes.isEmpty()) {
+            return List.of();
         }
         return likes.stream()
                 .map(Like::getId)
                 .toList();
     }
 
-    @Named("toCommentsIds")
-    default List<Long> toCommentsIds(List<Comment> comments) {
-        if (comments == null) {
-            return new ArrayList<>();
+    @Named("mapCommentsToCommentIds")
+    default List<Long> mapCommentsToCommentIds(List<Comment> comments) {
+        if (comments == null || comments.isEmpty()) {
+            return List.of();
         }
         return comments.stream()
                 .map(Comment::getId)
